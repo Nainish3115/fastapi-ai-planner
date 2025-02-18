@@ -7,52 +7,42 @@ from dotenv import load_dotenv
 from markdown import markdown
 from bs4 import BeautifulSoup
 
-# Load environment variables from .env file
+# Load environment variables
 load_dotenv()
 
 # Initialize FastAPI App
 app = FastAPI()
 
-# Fetch API Key from Environment Variables
+# Fetch API Key
 MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
 MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions"
-
-# Logging setup
-logging.basicConfig(level=logging.INFO)
-
-# Validate API key availability
-if not MISTRAL_API_KEY:
-    raise ValueError("MISTRAL_API_KEY is missing. Set it in the .env file.")
 
 # Define request model
 class ProjectRequest(BaseModel):
     project_name: str
-    model: str = "mistral-medium"  # Allow user to specify model
-    additional_requirements: str = ""  # Optional additional project details
+    model: str = "mistral-medium"
+    additional_requirements: str = ""
 
-# Root Route (Fixes 404 Error)
 @app.get("/")
 def home():
     return {"message": "FastAPI is running successfully!"}
 
-# Generate Project Plan Endpoint
 @app.post("/generate_project_plan")
 def generate_project_plan(request: ProjectRequest):
-    """Generates a detailed AI-driven project plan."""
+    """Generates a structured AI-driven project plan."""
     
     prompt = f"""
-    You are an expert AI assistant that provides structured and properly formatted project plans.
-    The project name is: {request.project_name}
+    You are an AI expert generating structured project plans.
+    Project: {request.project_name}
 
-    Provide the following details in a structured format:
+    Structure:
+    1. **Project Overview**
+    2. **Required Components** (Hardware & Software)
+    3. **Implementation Steps**
+    4. **Timeline Estimate**
+    5. **Additional Learning Resources**
 
-    1. **Project Overview**  
-    2. **Required Components** (Hardware & Software)  
-    3. **Step-by-step Implementation Guide**  
-    4. **Timeline Estimation**  
-    5. **Additional Learning Resources**  
-
-    Make sure the response is well-structured and formatted in plain text.
+    Provide structured responses in readable format.
     """
 
     headers = {
@@ -67,26 +57,19 @@ def generate_project_plan(request: ProjectRequest):
 
     try:
         response = requests.post(MISTRAL_API_URL, json=data, headers=headers)
-        response.raise_for_status()  # Raises an error for non-2xx responses
+        response.raise_for_status()
 
-        # Extract AI-generated response
         ai_response = response.json().get("choices", [{}])[0].get("message", {}).get("content", "No response from AI")
 
-        # Convert Markdown to clean HTML
+        # Convert Markdown to plain text for better readability
         html_response = markdown(ai_response)
-
-        # Convert HTML to plain text with formatting
         plain_text_response = BeautifulSoup(html_response, "html.parser").get_text()
 
         return {
             "project_name": request.project_name,
-            "ai_generated_plan": plain_text_response
+            "ai_generated_plan": plain_text_response.strip()
         }
-    
-    except requests.exceptions.RequestException as e:
-        logging.error(f"Error connecting to Mistral API: {e}")
-        raise HTTPException(status_code=500, detail="Error fetching AI response")
 
-    except KeyError:
-        logging.error("Unexpected response format from Mistral API")
-        raise HTTPException(status_code=500, detail="Unexpected API response format")
+    except requests.exceptions.RequestException as e:
+        logging.error(f"API error: {e}")
+        raise HTTPException(status_code=500, detail="Error fetching AI response")
