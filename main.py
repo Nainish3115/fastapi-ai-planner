@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 import requests
 import logging
 import os
+import json
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from markdown import markdown
@@ -42,7 +43,7 @@ def generate_project_plan(request: ProjectRequest):
     4. Timeline Estimate
     5. Additional Learning Resources
 
-    Provide responses in clear JSON format.
+    Provide responses as a structured JSON object.
     """
 
     headers = {
@@ -66,18 +67,11 @@ def generate_project_plan(request: ProjectRequest):
         html_response = markdown(ai_response)
         plain_text_response = BeautifulSoup(html_response, "html.parser").get_text()
 
-        # Split response into structured sections
-        sections = plain_text_response.split("\n\n")
-
-        structured_response = {}
-        current_section = None
-
-        for section in sections:
-            if "**" in section or ":" in section:  # Identify headers or sections
-                current_section = section.strip("**:")  # Clean section title
-                structured_response[current_section] = []
-            elif current_section:
-                structured_response[current_section].append(section.strip())
+        # Ensure AI response is structured properly
+        try:
+            structured_response = json.loads(plain_text_response)  # Convert AI output to JSON
+        except json.JSONDecodeError:
+            structured_response = {"error": "AI response could not be parsed into JSON."}
 
         return {
             "project_name": request.project_name,
