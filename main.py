@@ -4,6 +4,8 @@ import logging
 import os
 from pydantic import BaseModel
 from dotenv import load_dotenv
+from markdown import markdown
+from bs4 import BeautifulSoup
 
 # Load environment variables from .env file
 load_dotenv()
@@ -28,7 +30,7 @@ class ProjectRequest(BaseModel):
     model: str = "mistral-medium"  # Allow user to specify model
     additional_requirements: str = ""  # Optional additional project details
 
-# Root Route (To Fix 404 Error)
+# Root Route (Fixes 404 Error)
 @app.get("/")
 def home():
     return {"message": "FastAPI is running successfully!"}
@@ -67,9 +69,18 @@ def generate_project_plan(request: ProjectRequest):
         response = requests.post(MISTRAL_API_URL, json=data, headers=headers)
         response.raise_for_status()  # Raises an error for non-2xx responses
 
+        # Extract AI-generated response
+        ai_response = response.json().get("choices", [{}])[0].get("message", {}).get("content", "No response from AI")
+
+        # Convert Markdown to clean HTML
+        html_response = markdown(ai_response)
+
+        # Convert HTML to plain text with formatting
+        plain_text_response = BeautifulSoup(html_response, "html.parser").get_text()
+
         return {
             "project_name": request.project_name,
-            "ai_generated_plan": response.json().get("choices", [{}])[0].get("message", {}).get("content", "No response from AI")
+            "ai_generated_plan": plain_text_response
         }
     
     except requests.exceptions.RequestException as e:
