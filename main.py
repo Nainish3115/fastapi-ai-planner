@@ -11,7 +11,7 @@ load_dotenv()
 # Initialize FastAPI App
 app = FastAPI()
 
-# Fetch Mistral API Key from Environment Variables
+# Fetch API Key from Environment Variables
 MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
 MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions"
 
@@ -28,39 +28,30 @@ class ProjectRequest(BaseModel):
     model: str = "mistral-medium"  # Allow user to specify model
     additional_requirements: str = ""  # Optional additional project details
 
+# Root Route (To Fix 404 Error)
+@app.get("/")
+def home():
+    return {"message": "FastAPI is running successfully!"}
+
+# Generate Project Plan Endpoint
 @app.post("/generate_project_plan")
 def generate_project_plan(request: ProjectRequest):
     """Generates a detailed AI-driven project plan."""
     
-    # Construct the AI prompt
     prompt = f"""
-You are an expert AI assistant that provides structured and properly formatted project plans. 
-The project name is: {request.project_name}.
+    You are an expert AI assistant that provides structured and properly formatted project plans.
+    The project name is: {request.project_name}
 
-Provide the following details in a **strictly formatted** plain-text format with clear numbered sections:
+    Provide the following details in a structured format:
 
-1. **Project Overview**  
-   - Summarize the project in 2-3 simple sentences.
+    1. **Project Overview**  
+    2. **Required Components** (Hardware & Software)  
+    3. **Step-by-step Implementation Guide**  
+    4. **Timeline Estimation**  
+    5. **Additional Learning Resources**  
 
-2. **Required Components**  
-   - Clearly separate **Hardware** and **Software** components.
-   - Use a **plain-text numbered list** (no markdown, no bullet points).
-
-3. **Step-by-step Implementation Guide**  
-   - Write each step **on a new line** with **clear numbering** (e.g., "1.", "2.", "3.").
-   - Each step must be **simple, direct, and formatted properly**.
-
-4. **Timeline Estimation**  
-   - Provide an estimated duration in **weeks/months** based on project complexity.
-   - Format this section in plain text with proper paragraph spacing.
-
-5. **Additional Learning Resources**  
-   - List useful **URLs in plain text** (no markdown formatting).
-   - Separate links **clearly** to avoid merging.
-
-Make sure to follow the formatting rules **strictly** and avoid using markdown-style formatting like bullet points, asterisks, or unnecessary indentation.
-"""
-
+    Make sure the response is well-structured and formatted in plain text.
+    """
 
     headers = {
         "Authorization": f"Bearer {MISTRAL_API_KEY}",
@@ -74,13 +65,11 @@ Make sure to follow the formatting rules **strictly** and avoid using markdown-s
 
     try:
         response = requests.post(MISTRAL_API_URL, json=data, headers=headers)
-        response.raise_for_status()  # Raise error for non-2xx responses
-        ai_response = response.json()
+        response.raise_for_status()  # Raises an error for non-2xx responses
 
-        # Extract AI-generated content safely
         return {
             "project_name": request.project_name,
-            "ai_generated_plan": ai_response.get("choices", [{}])[0].get("message", {}).get("content", "No response from AI")
+            "ai_generated_plan": response.json().get("choices", [{}])[0].get("message", {}).get("content", "No response from AI")
         }
     
     except requests.exceptions.RequestException as e:
