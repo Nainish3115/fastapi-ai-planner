@@ -3,3 +3,5 @@ uvicorn
 fastapi
 requests
 python-dotenv
+markdown
+beautifulsoup4
