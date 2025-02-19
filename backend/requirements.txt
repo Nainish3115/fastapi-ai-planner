@@ -1,0 +1,8 @@
+fastapi[all]  # ✅ Includes FastAPI and necessary middleware (CORS, WebSockets, etc.)
+uvicorn       # ✅ Runs FastAPI application
+requests      # ✅ Required for API requests to Mistral AI
+python-dotenv # ✅ Loads environment variables from .env file
+markdown      # ✅ Converts AI-generated responses to clean text
+beautifulsoup4 # ✅ Cleans up HTML responses
+pydantic      # ✅ Ensures data validation for FastAPI requests
+gunicorn      # ✅ Required for deploying FastAPI on Render
