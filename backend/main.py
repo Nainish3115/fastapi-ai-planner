@@ -15,13 +15,16 @@ load_dotenv()
 app = FastAPI()
 
 # ✅ Fix CORS: Allow requests from React frontend (http://localhost:3000)
+from fastapi.middleware.cors import CORSMiddleware
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # ✅ Change this when deploying frontend
+    allow_origins=["*"],  # ✅ Allow all frontend origins
     allow_credentials=True,
     allow_methods=["*"],  # ✅ Allow all HTTP methods
     allow_headers=["*"],  # ✅ Allow all headers
 )
+
 
 # Define request model
 class ProjectRequest(BaseModel):
