@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 import requests
 import os
 from pydantic import BaseModel
@@ -6,7 +7,6 @@ from dotenv import load_dotenv
 from markdown import markdown
 from bs4 import BeautifulSoup
 import json
-from fastapi.middleware.cors import CORSMiddleware  # ✅ Import CORS Middleware
 
 # Load environment variables
 load_dotenv()
@@ -14,17 +14,18 @@ load_dotenv()
 # Initialize FastAPI App
 app = FastAPI()
 
-# ✅ Fix CORS: Allow requests from React frontend (http://localhost:3000)
-from fastapi.middleware.cors import CORSMiddleware
-
+# ✅ Fix CORS: Explicitly allow requests from React frontend (http://localhost:3000)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # ✅ Allow all frontend origins
+    allow_origins=[
+        "http://localhost:3000",  # ✅ Local React App
+        "https://fastapi-ai-planner.onrender.com"  # ✅ Render Backend
+    ],
     allow_credentials=True,
-    allow_methods=["*"],  # ✅ Allow all HTTP methods
+    allow_methods=["*"],  # ✅ Allow all HTTP methods (GET, POST, etc.)
     allow_headers=["*"],  # ✅ Allow all headers
+    expose_headers=["*"]  # ✅ Expose headers for preflight requests
 )
-
 
 # Define request model
 class ProjectRequest(BaseModel):
